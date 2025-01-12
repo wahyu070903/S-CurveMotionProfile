@@ -1,8 +1,23 @@
 start_pos = 0;
-end_pos = 2;  %radian 
-max_vel = 3.0;   %rps
+end_pos = 100;  %radian 
+max_vel = 4.0;   %rps
 max_acc = 2.4;
-max_jerk = 2.0;
+max_jerk = 2.8;
+
+classdef ConstantPeriod
+    properties
+        start_pos;
+        end_pos;
+        max_vel;
+        max_acc;
+        max_jerk;
+    end
+    function
+    methods
+    
+    end
+end
+
 
 Tp = 0;
 n = 4;  %3rd dimension (n-1);
@@ -25,26 +40,20 @@ for p = n:-1:1
             product = product * cummulator; 
         end
         Xq_max = (max_jerk/2^(n-q)) * product;    %here
-        disp(Xq_max);
-        fprintf("bound %d \n", max_bound(q));
         if(Xq_max > max_bound(q))
-            fprintf("here\n");
+            fprintf("bound exceed\n");
             coff = zeros(1,n);
             if(q == 1)
                 fprintf("cond1\n");
-                coff = [max_jerk, max_acc, max_vel, -end_pos];
+                coff = [max_jerk, max_acc, max_vel, -end_pos - max_vel];
             end
             if(q ==2)
                 fprintf("cond2\n");
-                coff = [max_jerk, max_acc, max_vel, -end_pos];
+                coff = [max_jerk, max_acc, max_vel, -end_pos - max_acc];
             end
             if(q == 3)
                 fprintf("cond3\n");
-                coff = [max_jerk, max_acc, max_vel, -end_pos];
-            end
-            if(q == 4)
-                fprintf("cond4\n");
-                coff = [max_jerk, max_acc, max_vel, -end_pos];
+                coff = [max_jerk, max_acc, max_vel, -end_pos - max_jerk];
             end
             solv = roots(coff);
             positive_real_roots = solv(real(solv) > 0 & imag(solv) == 0);
