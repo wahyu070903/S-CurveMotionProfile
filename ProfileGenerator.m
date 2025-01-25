@@ -1,8 +1,8 @@
 start_pos = 0;
 end_pos = 100;  %radian 
-max_vel = 4.0;   %rps
+max_vel = 8.0;   %rps
 max_acc = 2.4;
-max_jerk = 2.8;
+max_jerk = 1.8;
 
 period = ConstantPeriod(start_pos, end_pos, max_vel, max_acc, max_jerk);
 Tp = period.computePeriod();
@@ -41,34 +41,64 @@ for i = 1:length(t_base)
     end
 end
 
-t_jerk = linspace(0,base_profile_time(15), 1000);
-jerk = zeros(1,(length(t_jerk)/2));
-counter2 = 1;
+trigo_profile_time = [
+                        2*Tp + Tj;
+                        2*Tp + Tj + Ta;
+                        4*Tp + 2*Tj + Ta;
+                        4*Tp + 2*Tj + Ta + Tv;
+                        6*Tp + 3*Tj + Ta + Tv;
+                        6*Tp + 3*Tj + 2*Ta + Tv;
+                        8*Tp + 3*Tj + 2*Ta + Tv;
+                     ];
+
+t_jerk = linspace(0,trigo_profile_time(7), 1000);
+jerk = zeros(1,(length(t_jerk)));
 for i=1:1:length(jerk)
-    if(t_jerk(i) <= base_profile_time(1))
+    if(t_jerk(i) <= trigo_profile_time(1))
         inner = (((2*pi)/Tj)*t_jerk(i)) + (pi/2);
         jerk(i) = (max_jerk/2)*(1-sin(inner));
-    elseif(t_jerk(i) <= base_profile_time(2))
-        jerk(i) = max_jerk;
-    elseif(t_jerk(i) <= base_profile_time(3))
-        inner = (((2*pi)/Tj)*(t_jerk(i) - base_profile_time(2))) + (pi/2);
-        jerk(i) = (max_jerk/2)*(1-sin(inner));
-    elseif(t_jerk(i) <= base_profile_time(4))
+    elseif(t_jerk(i) <= trigo_profile_time(2))
         jerk(i) = 0;
-    elseif(t_jerk(i) <= base_profile_time(5))
+    elseif(t_jerk(i) <= trigo_profile_time(3))
+        inner = (((2*pi)/Tj)*(t_jerk(i) - base_profile_time(2))) + (pi/2);
+        jerk(i) = -(max_jerk/2)*(1-sin(inner));
+    elseif(t_jerk(i) <= trigo_profile_time(4))
+        jerk(i) = 0;
+    elseif(t_jerk(i) <= trigo_profile_time(5))
         inner = (((2*pi)/Tj)*(t_jerk(i) - base_profile_time(4))) + (pi/2);
         jerk(i) = -(max_jerk/2)*(1-sin(inner));
-    elseif(t_jerk(i) <= base_profile_time(6))
-        jerk(i) = -max_jerk;
-    elseif(t_jerk(i) <= base_profile_time(7))
-        inner = (((2*pi)/Tj)*(t_jerk(i) - base_profile_time(6))) + (pi/2);
-        jerk(i) = -(max_jerk/2)*(1-sin(inner));
-    else
+    elseif(t_jerk(i) <= trigo_profile_time(6))
         jerk(i) = 0;
+    elseif(t_jerk(i) <= trigo_profile_time(7))
+        inner = (((2*pi)/Tj)*(t_jerk(i) - base_profile_time(6))) + (pi/2);
+        jerk(i) = (max_jerk/2)*(1-sin(inner));
     end
 end
 
-jerk = [jerk, fliplr(jerk(1:end))];
+t_accel = linspace(0, trigo_profile_time(7),1000);
+accel = zeros(1, length(t_accel));
+for i=1:1:length(accel)
+    if(t_accel(i) <= trigo_profile_time(1))
+        inner = (((2*pi)/Tj)*t_accel(i)) + (pi/2);
+        accel(i) = (max_jerk/2)*(t_accel(i) - (Tj/(2*pi)) * cos(inner));
+    elseif(t_accel(i) <= trigo_profile_time(2))
+        accel(i) = max_acc;
+    elseif(t_accel(i) <= trigo_profile_time(3))
+        inner = ((2*pi)/Tj)*(t_accel(i)-trigo_profile_time(2)) + (pi/2);
+        accel(i) = (max_jerk/2)*((t_accel(i)-trigo_profile_time(2))-(Tj/(2*pi)) * cos(inner)) + max_acc;
+    elseif(t_accel(i) <= trigo_profile_time(4))
+        accel(i) = 0;
+    elseif(t_accel(i) <= trigo_profile_time(5))
+        inner = ((2*pi)/Tj)*(t_accel(i)-trigo_profile_time(4)) + (pi/2);
+        accel(i) = -(max_jerk/2)*((t_accel(i)-trigo_profile_time(4))-(Tj/(2*pi)) * cos(inner));
+    elseif(t_accel(i) <= trigo_profile_time(6))
+        accel(i) = -max_acc;
+    elseif(t_accel(i) <= trigo_profile_time(7))
+        inner = ((2*pi)/Tj)*(t_accel(i)-trigo_profile_time(6)) + (pi/2);
+        accel(i) = -(max_jerk/2)*((t_accel(i)-trigo_profile_time(6))-(Tj/(2*pi)) * cos(inner)) - max_acc;
+    end
+end
+
 
 figure;
 subplot(3,1,1);
@@ -85,6 +115,11 @@ title('Jerk Profile');
 xlabel('Time (s)');
 ylabel('Base (jerk)');
 
+subplot(3,1,3);
+plot(t_accel, accel, 'r');
+title('Accel Profile');
+xlabel('Time (s)');
+ylabel('Base (m/s2)');
 
 
 
